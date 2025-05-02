@@ -33,7 +33,7 @@ const PhoneNumberScreen = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        headlessModule.initialize("OD6F3SJGCP93605DA5OM")
+        headlessModule.initialize("IMYDOEVY0N0ZG22FNTTI")
         headlessModule.setResponseCallback(onHeadlessResult);
         return () => {
             headlessModule.clearListener();
@@ -120,11 +120,11 @@ const PhoneNumberScreen = () => {
 
             case "ONETAP": {
                 console.log("OneTap response received");
-                const token = result.response.token;
+                const token = result.response.data.token;
                 if (token != null) {
                     navigation.navigate('VerificationSuccessScreen', {
                         token: token,
-                        phone: phoneNumber,
+                        phone: phoneNumberRef.current,
                     })
                 }
                 break;
@@ -171,7 +171,6 @@ const PhoneNumberScreen = () => {
                 keyboardType="number-pad"
                 onChangeText={(text) => {
                   setPhoneNumber(text);
-                  console.log("Phone Number: ", text);
                 }}
                 placeholder="Enter Phone Number"
                 placeholderTextColor="#999"

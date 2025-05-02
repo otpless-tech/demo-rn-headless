@@ -29,6 +29,7 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
     const [tryingOnChannel, setTryingOnChannel] = useState(deliveryChannel);
     const [isDelivered, setIsDelivered] = useState(false);
 
+    var isVerified = false
 
     const onHeadlessResult = (result: any) => {
         headlessModule.commitResponse(result);
@@ -112,19 +113,19 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
 
     useEffect(() => {
         headlessModule.setResponseCallback(onHeadlessResult);
-        return () => {
-            headlessModule.cleanup();
-            headlessModule.clearListener();
-        };
     }, []);
 
     const triggerOtpVerification = (otp: string) => {
+        if (isVerified == true) {
+            return
+        }
         const request = {
             phone: phoneNumber,
             countryCode: '91',
             otp: otp,
         };
         headlessModule.start(request);
+        isVerified = true
     };
 
     return (

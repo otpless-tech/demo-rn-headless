@@ -185,10 +185,7 @@ const PhoneNumberScreen = () => {
                     <TouchableOpacity
                         style={styles.buttonInner}
                         onPress={() => {
-                            if (phoneNumber == "60069") {
-                                headlessModule.decimateAll();
-                                return
-                            }
+                            headlessModule.decimateAll();
                             if (phoneNumber.trim()) {
                                 Keyboard.dismiss()
                                 const request = {

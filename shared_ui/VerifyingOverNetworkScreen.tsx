@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ActivityIndicator, 
-  Platform, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
   SafeAreaView,
   Image,
   Dimensions,
@@ -89,7 +89,7 @@ export default function NetworkVerificationScreen() {
         }
         break;
       case "VERIFY":
-        
+
         break;
       case "DELIVERY_STATUS":
         const authType = result.response.authType;
@@ -123,33 +123,18 @@ export default function NetworkVerificationScreen() {
         style={styles.container}
       >
         <SafeAreaView style={styles.safeArea}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logo}>zepto</Text>
-          </View>
-          
           <View style={styles.contentContainer}>
-            <View style={styles.animationContainer}>
-              <View style={styles.phoneIconContainer}>
-                <View style={styles.phoneIcon} />
-                <View style={styles.signalWave1} />
-                <View style={styles.signalWave2} />
-                <View style={styles.signalWave3} />
-              </View>
-            </View>
-            
+
+            <Image source={require('../assets/sna-icons.png')} style={styles.phoneIcon} />
             <Text style={styles.title}>{message}</Text>
-            <Text style={styles.phoneNumber}>+91 {phoneNumber}</Text>
-            
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color="#FF5E62" style={styles.loader} />
-              <Text style={styles.loaderText}>This may take a few seconds...</Text>
+
+
+
+            <View style={styles.progressBarContainer}>
+              <ActivityIndicator size="small" color="#FF5E62" style={styles.deliveryLoader} />
+              <Text style={styles.loaderText}>This may take a few seconds</Text>
             </View>
-          </View>
-          
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Powered by Silent Authentication
-            </Text>
+
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -158,6 +143,36 @@ export default function NetworkVerificationScreen() {
 }
 
 const styles = StyleSheet.create({
+  deliveryLoader: {
+    marginRight: 8,
+  },
+  progressBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 24,
+  },
+  iconTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,   // spacing below
+  },
+  phoneIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+    marginBottom: 16,  // <-- add this
+  },
   container: {
     flex: 1,
   },
@@ -195,19 +210,11 @@ const styles = StyleSheet.create({
     height: 100,
     width: 100,
   },
-  phoneIcon: {
-    width: 50,
-    height: 80,
-    borderRadius: 8,
-    backgroundColor: '#FFFFFF',
-    position: 'relative',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
+  container2: {
+    flexDirection: 'row',   // Ensures left to right layout
+    alignItems: 'center',   // Vertically centers items
   },
+
   signalWave1: {
     position: 'absolute',
     width: 90,
@@ -258,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   loaderText: {
-    fontSize: 14,
+    fontSize: 18,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
   },

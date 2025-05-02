@@ -10,15 +10,15 @@ PODS:
   - hermes-engine (0.79.2):
     - hermes-engine/Pre-built (= 0.79.2)
   - hermes-engine/Pre-built (0.79.2)
-  - otpless-headless-rn (1.0.5):
-    - OtplessBM/Core (= 1.1.1)
+  - otpless-headless-rn (1.0.6):
+    - OtplessBM/Core (= 1.1.3)
     - RCT-Folly
     - RCTRequired
     - RCTTypeSafety
     - React-Codegen
     - React-Core
     - ReactCommon/turbomodule/core
-  - OtplessBM/Core (1.1.1)
+  - OtplessBM/Core (1.1.3)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -2225,8 +2225,8 @@ SPEC CHECKSUMS:
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
   hermes-engine: 314be5250afa5692b57b4dd1705959e1973a8ebe
-  otpless-headless-rn: f7058ca383d319e04ae780e0bb04dc41242c25d4
-  OtplessBM: a3fd650326c6390afff30982cc9d9df67a800bfc
+  otpless-headless-rn: 80c1ba3e21a5e65f927e6d43e9e8c407f26b2f35
+  OtplessBM: e252a6336799b10dcd96eee6a0860c00ffae033a
   RCT-Folly: 36fe2295e44b10d831836cc0d1daec5f8abcf809
   RCTDeprecation: 83ffb90c23ee5cea353bd32008a7bca100908f8c
   RCTRequired: eb7c0aba998009f47a540bec9e9d69a54f68136e

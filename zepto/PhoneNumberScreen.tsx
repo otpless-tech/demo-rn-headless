@@ -22,7 +22,7 @@ export const headlessModule = new OtplessHeadlessModule();
 
 const PhoneNumberScreen = () => {
     // State to store the phone number entered by the user
-    const [phoneNumber, setPhoneNumber] = useState(''); 
+    const [phoneNumber, setPhoneNumber] = useState('');
 
     // Use ref to keep track of latest phone number value for use in callbacks
     const phoneNumberRef = useRef('');
@@ -40,10 +40,10 @@ const PhoneNumberScreen = () => {
     useEffect(() => {
         // STEP 1: Initialize the SDK with your APP ID from OTPless dashboard
         headlessModule.initialize("IMYDOEVY0N0ZG22FNTTI")
-        
+
         // STEP 2: Set the callback to handle responses from the SDK
         headlessModule.setResponseCallback(onHeadlessResult);
-        
+
         // Clean up when component unmounts
         return () => {
             // Always clear listeners to prevent memory leaks
@@ -56,7 +56,7 @@ const PhoneNumberScreen = () => {
     const onHeadlessResult = (result: any) => {
         // Always commit the response first
         headlessModule.commitResponse(result);
-        
+
         // Extract the response type to handle different scenarios
         const responseType = result.responseType;
         setLoading(false);
@@ -76,17 +76,17 @@ const PhoneNumberScreen = () => {
                 // Authentication initiation response
                 if (result.statusCode == 200) {
                     console.log("Headless authentication initiated");
-                    
+
                     // Check which authentication type was selected by the SDK
                     const authType = result.response.authType;
-                    
+
                     if (authType === "OTP") {
                         // For OTP authentication, navigate to OTP verification screen
                         console.log("Phone number: ", phoneNumberRef.current);
                         console.log("Delivery channel: ", result.response.deliveryChannel);
-                        navigation.navigate('OtpVerification', { 
-                            phoneNumber: phoneNumberRef.current, 
-                            deliveryChannel: result.response.deliveryChannel 
+                        navigation.navigate('OtpVerification', {
+                            phoneNumber: phoneNumberRef.current,
+                            deliveryChannel: result.response.deliveryChannel
                         });
                     } else if (authType === "SILENT_AUTH") {
                         // For Silent Authentication (SNA), navigate to network verification screen
@@ -131,7 +131,7 @@ const PhoneNumberScreen = () => {
                 // Handle OTP delivery status updates
                 const authType = result.response.authType;
                 // Authentication type (OTP, MAGICLINK, OTP_LINK)
-                
+
                 const deliveryChannel = result.response.deliveryChannel;
                 // Delivery channel (SMS, WHATSAPP, etc.)
                 break;
@@ -205,13 +205,13 @@ const PhoneNumberScreen = () => {
                             headlessModule.decimateAll();
                             if (phoneNumber.trim()) {
                                 Keyboard.dismiss()
-                                
+
                                 // Create request object with phone number and country code
                                 const request = {
                                     phone: phoneNumber,
                                     countryCode: "91",
                                 };
-                                
+
                                 // Initiate authentication with OTPless
                                 headlessModule.start(request);
                                 setLoading(true);

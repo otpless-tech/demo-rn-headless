@@ -14,61 +14,82 @@ import LinearGradient from 'react-native-linear-gradient';
 import { RootStackParamList } from '../App';
 import { useNavigation } from '@react-navigation/native';
 
+// Import OTPless Headless SDK
 import { OtplessHeadlessModule } from 'otpless-headless-rn';
 
+// Create a global instance of OTPless Headless module that can be shared across screens
 export const headlessModule = new OtplessHeadlessModule();
 
-
-
 const PhoneNumberScreen = () => {
-    const [phoneNumber, setPhoneNumber] = useState(''); // Pre-filled number
+    // State to store the phone number entered by the user
+    const [phoneNumber, setPhoneNumber] = useState(''); 
 
+    // Use ref to keep track of latest phone number value for use in callbacks
     const phoneNumberRef = useRef('');
 
+    // Update ref whenever phoneNumber state changes
     useEffect(() => {
         phoneNumberRef.current = phoneNumber;
     }, [phoneNumber]);
 
+    // States for UI handling
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Initialize OTPless SDK when component mounts
     useEffect(() => {
+        // STEP 1: Initialize the SDK with your APP ID from OTPless dashboard
         headlessModule.initialize("IMYDOEVY0N0ZG22FNTTI")
+        
+        // STEP 2: Set the callback to handle responses from the SDK
         headlessModule.setResponseCallback(onHeadlessResult);
+        
+        // Clean up when component unmounts
         return () => {
+            // Always clear listeners to prevent memory leaks
             headlessModule.clearListener();
             headlessModule.cleanup();
         };
     }, []);
 
-
+    // STEP 3: Handle OTPless SDK responses
     const onHeadlessResult = (result: any) => {
+        // Always commit the response first
         headlessModule.commitResponse(result);
+        
+        // Extract the response type to handle different scenarios
         const responseType = result.responseType;
         setLoading(false);
 
         switch (responseType) {
             case "SDK_READY": {
-                // Notify that SDK is ready
+                // SDK is initialized and ready to use
                 console.log("SDK is ready");
                 break;
             }
             case "FAILED": {
+                // SDK initialization failed
                 console.log("SDK initialization failed");
-                // Handle SDK initialization failure
                 break;
             }
             case "INITIATE": {
-                // Notify that headless authentication has been initiated
+                // Authentication initiation response
                 if (result.statusCode == 200) {
                     console.log("Headless authentication initiated");
-                    const authType = result.response.authType; // This is the authentication type
+                    
+                    // Check which authentication type was selected by the SDK
+                    const authType = result.response.authType;
+                    
                     if (authType === "OTP") {
-                        // Take user to OTP verification screen
-                        console.log("Phoen number: ", phoneNumberRef.current);
-                        console.log("Deliverey channelk;: ", result.response.deliveryChannel);
-                        navigation.navigate('OtpVerification', { phoneNumber: phoneNumberRef.current, deliveryChannel: result.response.deliveryChannel });
+                        // For OTP authentication, navigate to OTP verification screen
+                        console.log("Phone number: ", phoneNumberRef.current);
+                        console.log("Delivery channel: ", result.response.deliveryChannel);
+                        navigation.navigate('OtpVerification', { 
+                            phoneNumber: phoneNumberRef.current, 
+                            deliveryChannel: result.response.deliveryChannel 
+                        });
                     } else if (authType === "SILENT_AUTH") {
+                        // For Silent Authentication (SNA), navigate to network verification screen
                         navigation.navigate('NetworkVerificationScreen', {
                             backgroundColor: '#4B007D',
                             textColor: '#FFFFFF',
@@ -79,12 +100,13 @@ const PhoneNumberScreen = () => {
                         });
                     }
                 } else {
+                    // Handle initiation error
                     setError(result.response.errorMessage);
                 }
                 break;
             }
             case "OTP_AUTO_READ": {
-                // OTP_AUTO_READ is triggered only in Android devices for WhatsApp and SMS.
+                // Auto-read OTP from SMS or WhatsApp (Android only)
                 if (Platform.OS === "android") {
                     const otp = result.response.otp;
                     console.log(`OTP Received: ${otp}`);
@@ -92,36 +114,34 @@ const PhoneNumberScreen = () => {
                 break;
             }
             case "VERIFY": {
-                // notify that verification has failed.
+                // Handle verification response
                 if (result.response.authType == "SILENT_AUTH") {
                     if (result.statusCode == 9106) {
-                        // Silent Authentication and all fallback authentication methods in SmartAuth have failed.
-                        //  The transaction cannot proceed further. 
-                        // Handle the scenario to gracefully exit the authentication flow 
+                        // SNA and all fallback methods failed
+                        // Handle Terminal Senario by fallback to legacy auth
                     } else {
-                        // Silent Authentication failed. 
-                        // If SmartAuth is enabled, the INITIATE response 
-                        // will include the next available authentication method configured in the dashboard.
+                        // SNA failed, but fallback methods might be available
                     }
                 } else {
-
+                    // Handle other verification scenarios
                 }
-
                 break;
             }
             case "DELIVERY_STATUS": {
-                // This function is called when delivery is successful for your authType.
+                // Handle OTP delivery status updates
                 const authType = result.response.authType;
-                // It is the authentication type (OTP, MAGICLINK, OTP_LINK) for which the delivery status is being sent
+                // Authentication type (OTP, MAGICLINK, OTP_LINK)
+                
                 const deliveryChannel = result.response.deliveryChannel;
-                // It is the delivery channel (SMS, WHATSAPP, etc) on which the authType has been delivered
+                // Delivery channel (SMS, WHATSAPP, etc.)
                 break;
             }
-
             case "ONETAP": {
+                // OneTap authentication success
                 console.log("OneTap response received");
                 const token = result.response.data.token;
                 if (token != null) {
+                    // Navigate to success screen with token
                     navigation.navigate('VerificationSuccessScreen', {
                         token: token,
                         phone: phoneNumberRef.current,
@@ -130,26 +150,22 @@ const PhoneNumberScreen = () => {
                 break;
             }
             case "FALLBACK_TRIGGERED": {
-                // A fallback occurs when an OTP delivery attempt on one channel fails,  
-                // and the system automatically retries via the subsequent channel selected on Otpless Dashboard.  
-                // For example, if a merchant opts for SmartAuth with primary channal as WhatsApp and secondary channel as SMS,
-                // in that case, if OTP delivery on WhatsApp fails, the system will automatically retry via SMS.
-                // The response will contain the deliveryChannel to which the OTP has been sent.
+                // Handle fallback scenarios (when primary delivery method fails)
                 if (result.response.deliveryChannel != null) {
                     const newDeliveryChannel = result.response.deliveryChannel
-                    // This is the deliveryChannel to which the OTP has been sent
+                    // Update UI to show the new delivery channel
                 }
                 break;
             }
             default: {
+                // Handle unknown response types
                 console.warn(`Unknown response type: ${responseType}`);
                 break;
             }
         }
-
     };
 
-
+    // Navigation setup
     type PhoneNumberScreenNavigationProp = StackNavigationProp<
         RootStackParamList,
         'PhoneNumber'
@@ -185,13 +201,18 @@ const PhoneNumberScreen = () => {
                     <TouchableOpacity
                         style={styles.buttonInner}
                         onPress={() => {
+                            // STEP 4: Start authentication flow when user clicks continue
                             headlessModule.decimateAll();
                             if (phoneNumber.trim()) {
                                 Keyboard.dismiss()
+                                
+                                // Create request object with phone number and country code
                                 const request = {
                                     phone: phoneNumber,
                                     countryCode: "91",
                                 };
+                                
+                                // Initiate authentication with OTPless
                                 headlessModule.start(request);
                                 setLoading(true);
                             }
@@ -206,6 +227,7 @@ const PhoneNumberScreen = () => {
                     <Text style={styles.linkText}>Privacy Policy</Text>
                 </Text>
 
+                {/* Display error messages from OTPless */}
                 {error.length > 0 && (
                     <Text style={styles.errorText}>
                         {error}
@@ -213,7 +235,7 @@ const PhoneNumberScreen = () => {
                 )}
             </View>
 
-            {/* Show loading indicator as an overlay */}
+            {/* Loading indicator overlay */}
             {loading && (
                 <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color="#FFFFFF" />
@@ -223,6 +245,7 @@ const PhoneNumberScreen = () => {
     );
 };
 
+// Styles for the UI components
 const styles = StyleSheet.create({
     loadingOverlay: {
         position: 'absolute',

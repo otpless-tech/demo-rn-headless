@@ -17,6 +17,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
+// Define screen props with types for route parameters
 type NetworkVerificationScreenProps = {
   route: {
     params: {
@@ -31,10 +32,18 @@ type NetworkVerificationScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'NetworkVerificationScreen'>;
 };
 
+/**
+ * NetworkVerificationScreen
+ * 
+ * This screen is displayed during Silent Network Authentication (SNA) process.
+ * It shows a loading state while OTPless attempts to verify the user's phone number
+ * through the carrier network without requiring OTP input.
+ */
 export default function NetworkVerificationScreen() {
   const navigation = useNavigation<NetworkVerificationScreenProps['navigation']>();
   const route = useRoute<RouteProp<RootStackParamList, 'NetworkVerificationScreen'>>();
 
+  // Extract parameters from navigation
   const {
     backgroundColor = '#4B007D',
     textColor = '#FFFFFF',
@@ -44,10 +53,12 @@ export default function NetworkVerificationScreen() {
     otplessModule
   } = route.params || {};
 
+  // Set up response callback when component mounts
   useEffect(() => {
     otplessModule.setResponseCallback(onHeadlessResult);
   }, []);
 
+  // Navigate to success screen with authentication token
   const navigate = (token: string) => {
     console.log("Navigating to screen with token:", token);
     navigation.navigate('VerificationSuccessScreen', {
@@ -56,15 +67,18 @@ export default function NetworkVerificationScreen() {
     });
   };
 
+  // Handle responses from OTPless SDK during Silent Authentication
   const onHeadlessResult = (result: any) => {
     otplessModule.commitResponse(result);
     const responseType = result.responseType;
 
     switch (responseType) {
       case "SDK_READY":
+        // SDK is initialized and ready
         console.log("SDK is ready");
         break;
       case "FAILED":
+        // SDK initialization failed
         console.log("SDK initialization failed");
         break;
       case "INITIATE":
@@ -72,30 +86,34 @@ export default function NetworkVerificationScreen() {
           console.log("Headless authentication initiated");
           const authType = result.response.authType;
           if (authType === "OTP") {
-            // Handle OTP verification
+            // If Silent Auth failed and fallback to OTP is configured,
+            // navigate to OTP verification screen
             navigation.replace("OtpVerification", {
               phoneNumber: phoneNumber,
               deliveryChannel: result.response.deliveryChannel,
             });
           } else if (authType === "SILENT_AUTH") {
-            // Handle Silent Authentication initiation by showing loading status
+            // Continue showing SNA loading screen
           }
         }
         break;
       case "OTP_AUTO_READ":
+        // Auto-detect OTP (Android only)
         if (Platform.OS === "android") {
           const otp = result.response.otp;
           console.log(`OTP Received: ${otp}`);
         }
         break;
       case "VERIFY":
-
+        // Handle verification response
         break;
       case "DELIVERY_STATUS":
+        // OTP delivery status updates
         const authType = result.response.authType;
         const deliveryChannel = result.response.deliveryChannel;
         break;
       case "ONETAP":
+        // Handle successful authentication
         const token = result.response.data.token;
         if (token != null) {
           console.log(`OneTap Data: ${token}`);
@@ -103,6 +121,7 @@ export default function NetworkVerificationScreen() {
         }
         break;
       case "FALLBACK_TRIGGERED":
+        // Handle fallback to different authentication method
         if (result.response.deliveryChannel != null) {
           const newDeliveryChannel = result.response.deliveryChannel;
         }
@@ -113,6 +132,7 @@ export default function NetworkVerificationScreen() {
     }
   };
 
+  // UI for Silent Network Authentication loading screen
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#4B007D" />
@@ -125,11 +145,11 @@ export default function NetworkVerificationScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.contentContainer}>
 
+            {/* Network authentication icon */}
             <Image source={require('../assets/sna-icons.png')} style={styles.phoneIcon} />
             <Text style={styles.title}>{message}</Text>
 
-
-
+            {/* Loading indicator */}
             <View style={styles.progressBarContainer}>
               <ActivityIndicator size="small" color="#FF5E62" style={styles.deliveryLoader} />
               <Text style={styles.loaderText}>This may take a few seconds</Text>
@@ -142,6 +162,7 @@ export default function NetworkVerificationScreen() {
   );
 }
 
+// Styles for the UI components
 const styles = StyleSheet.create({
   deliveryLoader: {
     marginRight: 8,

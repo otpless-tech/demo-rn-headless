@@ -173,8 +173,8 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
           <Text style={styles.resendLabel}>Didn't get it?</Text>
           <TouchableOpacity 
             onPress={() => {
-              setIsDelivered(false); // Reset delivery status when resending
-              setTryingOnChannel("SMS"); // Update channel
+              setIsDelivered(false);
+              setTryingOnChannel("SMS");
               
               const request = {
                 phone: phoneNumber,

@@ -1,9 +1,5 @@
 # OTPless React Native Headless Demo
 
-<p align="center">
-  <img src="assets/sna-icons.png" height="70" alt="OTPless Logo"/>
-</p>
-
 This is a comprehensive demo project showcasing the integration of OTPless Headless SDK for React Native, styled with a Zepto-like UI. The OTPless SDK provides seamless authentication with multiple methods including Silent Network Authentication (SNA), OTP via SMS/WhatsApp, and more.
 
 ## Features

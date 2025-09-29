@@ -13,7 +13,7 @@
     "@react-native-community/masked-view": "^0.1.11",
     "@react-navigation/native": "^7.1.6",
     "@react-navigation/stack": "^7.2.10",
-    "otpless-headless-rn": "^1.0.6",
+    "otpless-headless-rn": "^2.0.1",
     "react": "19.0.0",
     "react-native": "0.79.2",
     "react-native-gesture-handler": "^2.25.0",

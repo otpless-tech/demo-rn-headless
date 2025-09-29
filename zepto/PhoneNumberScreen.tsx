@@ -39,7 +39,7 @@ const PhoneNumberScreen = () => {
     // Initialize OTPless SDK when component mounts
     useEffect(() => {
         // STEP 1: Initialize the SDK with your APP ID from OTPless dashboard
-        headlessModule.initialize("IMYDOEVY0N0ZG22FNTTI")
+        headlessModule.initialize("YOUR_APP_ID")
 
         // STEP 2: Set the callback to handle responses from the SDK
         headlessModule.setResponseCallback(onHeadlessResult);

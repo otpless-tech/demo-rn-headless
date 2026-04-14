@@ -1,35 +1,35 @@
-import React, { useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Alert, 
-  Platform, 
-  Dimensions,
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
   StatusBar,
   SafeAreaView,
   Clipboard,
-  Animated
+  Animated,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-
-const { width, height } = Dimensions.get('window');
 
 type VerificationCompleteScreenProps = {
   route: {
     params: {
       token: string;
-      phone: String;
+      idToken: string;
+      phone: string;
     };
   };
   navigation: any;
 };
 
 const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteScreenProps) => {
-  const { token, phone } = route.params;
+  const { token, idToken, phone } = route.params;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const lastBackPress = useRef<number>(0);
 
   useEffect(() => {
     // Animation sequence for checkmark and content
@@ -43,14 +43,29 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-      })
+      }),
     ]).start();
+  }, [scaleAnim, fadeAnim]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      const now = Date.now();
+      if (now - lastBackPress.current < 2000) {
+        BackHandler.exitApp();
+      } else {
+        ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+        lastBackPress.current = now;
+      }
+      return true; // prevent default back action
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
   }, []);
 
   const copyToClipboard = () => {
-    Clipboard.setString(token);
-        Alert.alert('Copied', 'Token has been copied to clipboard');
-    Alert.alert('Copied', 'Token has been copied to clipboard');
+    Clipboard.setString(idToken);
+    Alert.alert('Copied', 'idToken has been copied to clipboard');
   };
 
   return (
@@ -68,8 +83,8 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
             <Animated.View style={[
               styles.checkmarkContainer,
               {
-                transform: [{ scale: scaleAnim }]
-              }
+                transform: [{ scale: scaleAnim }],
+              },
             ]}>
               <View style={styles.outerCircle}>
                 <View style={styles.innerCircle}>
@@ -77,7 +92,7 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
                 </View>
               </View>
             </Animated.View>
-            
+
             {/* Animated content */}
             <Animated.View style={{ opacity: fadeAnim, width: '100%', alignItems: 'center' }}>
               <Text style={styles.title}>Verification Complete</Text>
@@ -85,11 +100,11 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
                 <Text style={styles.phoneLabel}>Verified Number:</Text>
                 <Text style={styles.phoneNumber}>+91 {phone}</Text>
               </View>
-              
+
               <Text style={styles.subtitle}>
                 Your phone number has been successfully verified
               </Text>
-              
+
               <TouchableOpacity
                 style={styles.primaryButton}
                 onPress={copyToClipboard}
@@ -104,7 +119,7 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
                   <Text style={styles.buttonText}>Copy Token</Text>
                 </LinearGradient>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.secondaryButton}
                 onPress={() =>
@@ -115,9 +130,9 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
                 }
                 activeOpacity={0.8}
               >
-                <Text style={styles.secondaryButtonText}>Go Back</Text>
+                <Text style={styles.secondaryButtonText}>Logout</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.footer}>
                 <Text style={styles.footerText}>
                   Hassle less with <Text style={styles.highlight}>Otpless</Text> & Deliver now with <Text style={styles.highlight}>Zepto</Text> 🚀
@@ -260,5 +275,5 @@ const styles = StyleSheet.create({
   highlight: {
     fontWeight: 'bold',
     color: '#FFFFFF',
-  }
+  },
 });

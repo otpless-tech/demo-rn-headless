@@ -1,16 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
     StyleSheet,
     TouchableOpacity,
-    Platform,
-    ActivityIndicator
+    ActivityIndicator,
 } from 'react-native';
-
+import LinearGradient from 'react-native-linear-gradient';
 import { headlessModule } from './PhoneNumberScreen';
 import OTPInput from './OTPInput';
+import { useOtplessResult } from '../hooks/useOtplessResult';
 
 type OtpVerificationScreenNavigationProp = {
     route: {
@@ -19,124 +18,51 @@ type OtpVerificationScreenNavigationProp = {
             deliveryChannel: string;
         };
     };
-    navigation: any;
 };
 
-const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavigationProp) => {
+const OtpVerificationScreen = ({ route }: OtpVerificationScreenNavigationProp) => {
     const { phoneNumber, deliveryChannel } = route.params;
     const [otp, setOtp] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const [tryingOnChannel, setTryingOnChannel] = useState(deliveryChannel);
     const [isDelivered, setIsDelivered] = useState(false);
 
-    var isVerified = false
-
-    const onHeadlessResult = (result: any) => {
-        headlessModule.commitResponse(result);
-        const responseType = result.responseType;
-
-        switch (responseType) {
-            case "SDK_READY": {
-                console.log("SDK is ready");
-                break;
-            }
-            case "FAILED": {
-                console.log("SDK initialization failed");
-                break;
-            }
-            case "INITIATE": {
-                if (result.statusCode === 200) {
-                    console.log("Headless authentication initiated");
-                    const authType = result.response.authType;
-                    if (authType === "OTP") {
-                        // Take user to OTP verification screen
-                    } else if (authType === "SILENT_AUTH") {
-                        // Handle Silent Authentication initiation
-                    }
-                } else {
-                    setError(result.response.errorMessage);
-                }
-                break;
-            }
-            case "OTP_AUTO_READ": {
-                if (Platform.OS === "android") {
-                    const otp = result.response.otp;
-                    console.log(`OTP Received: ${otp}`);
-                    setOtp(otp);
-                    triggerOtpVerification(otp);
-                }
-                break;
-            }
-            case "VERIFY": {
-                setError(result.response.errorMessage);
-                break;
-            }
-            case "DELIVERY_STATUS": {
-                const authType = result.response.authType;
-                const deliveryChannel = result.response.deliveryChannel;
-                setIsDelivered(true);
-                break;
-            }
-
-            case "ONETAP": {
-                console.log("OneTap response received");
-                const token = result.response.data.token;
-                if (token != null) {
-                    console.log(`OneTap Data: ${token}`);
-                    console.log("Navigating to screen with token:", token);
-                    navigate(token);
-                }
-                break;
-            }
-            case "FALLBACK_TRIGGERED": {
-                if (result.response.deliveryChannel != null) {
-                    const newDeliveryChannel = result.response.deliveryChannel;
-                    setTryingOnChannel(newDeliveryChannel);
-                }
-                break;
-            }
-            default: {
-                console.warn(`Unknown response type: ${responseType}`);
-                break;
-            }
-        }
-    };
-
-    const navigate = (token: string) => {
-        console.log("Navigating to screen with token:", token);
-
-        navigation.navigate('VerificationSuccessScreen', {
-            token: token,
-            phone: phoneNumber, // Using the destructured phone param
-        });
-    };
-
-    useEffect(() => {
-        headlessModule.setResponseCallback(onHeadlessResult);
-    }, []);
-
-    const triggerOtpVerification = (otp: string) => {
-        if (isVerified == true) {
-            return
-        }
+    const triggerOtpVerification = (otpValue: string) => {
         const request = {
             phone: phoneNumber,
             countryCode: '91',
-            otp: otp,
+            otp: otpValue,
         };
         headlessModule.start(request);
-        isVerified = true
     };
+
+    useOtplessResult({
+        otplessModule: headlessModule,
+        phoneNumber,
+        setError,
+        onInitiateSuccess: () => {
+            // Already on the OTP screen — nothing to navigate
+        },
+        onOtpAutoRead: (receivedOtp) => {
+            setOtp(receivedOtp);
+            setLoading(true);
+            triggerOtpVerification(receivedOtp);
+        },
+        onDeliveryStatus: () => setIsDelivered(true),
+        onFallback: (channel) => setTryingOnChannel(channel),
+        onError: () => setLoading(false),
+    });
 
     return (
         <View style={styles.container}>
           <Text style={styles.title}>OTP</Text>
           <Text style={styles.subtitle}>Verification</Text>
-          
+
           <Text style={styles.phoneText}>
             OTP has been sent to <Text style={styles.bold}>+91 {phoneNumber}</Text>
           </Text>
-          
+
           {/* Delivery status row */}
           <View style={styles.deliveryStatusContainer}>
             {isDelivered ? (
@@ -149,37 +75,55 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
               <ActivityIndicator size="small" color="#FF5E62" style={styles.deliveryLoader} />
             )}
             <Text style={styles.deliveryText}>
-              {isDelivered 
-                ? `Delivered on ${tryingOnChannel}` 
+              {isDelivered
+                ? `Delivered on ${tryingOnChannel}`
                 : `Sending OTP via ${tryingOnChannel}...`}
             </Text>
           </View>
-          
+
           <View style={styles.otpContainer}>
             <OTPInput
               value={otp}
               onChangeText={(text: string) => {
                 setOtp(text);
-                if (text.length === 6) {
-                  triggerOtpVerification(text);
-                }
               }}
               onComplete={undefined}
             />
           </View>
-          
-          {error && <Text style={styles.errorText}>{error}</Text>}
-          
+
+          <LinearGradient
+            colors={['#FF5E62', '#FF9966']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.verifyButton, (loading || otp.length < 6) && styles.verifyButtonDisabled]}
+          >
+            <TouchableOpacity
+              style={styles.verifyButtonInner}
+              disabled={loading || otp.length < 6}
+              onPress={() => {
+                setLoading(true);
+                triggerOtpVerification(otp);
+              }}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.verifyButtonText}>Verify OTP</Text>
+              )}
+            </TouchableOpacity>
+          </LinearGradient>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
           <Text style={styles.resendLabel}>Didn't get it?</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               setIsDelivered(false);
-              setTryingOnChannel("SMS");
-              
+              setTryingOnChannel('SMS');
               const request = {
                 phone: phoneNumber,
-                countryCode: "91",
-                deliveryChannel: "SMS",
+                countryCode: '91',
+                deliveryChannel: 'SMS',
               };
               headlessModule.start(request);
             }}
@@ -189,7 +133,7 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
         </View>
       );
     };
-    
+
     const styles = StyleSheet.create({
       container: {
         flex: 1,
@@ -220,7 +164,6 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
       bold: {
         fontWeight: 'bold',
       },
-      // New styles for delivery status
       deliveryStatusContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -261,6 +204,24 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
         width: '100%',
         marginVertical: 20,
       },
+      verifyButton: {
+        width: '100%',
+        borderRadius: 50,
+        overflow: 'hidden',
+        marginBottom: 16,
+      },
+      verifyButtonDisabled: {
+        opacity: 0.5,
+      },
+      verifyButtonInner: {
+        paddingVertical: 14,
+        alignItems: 'center',
+      },
+      verifyButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+      },
       errorText: {
         color: '#FF5C5C',
         fontSize: 14,
@@ -281,5 +242,5 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
         marginTop: 8,
       },
     });
-    
+
 export default OtpVerificationScreen;

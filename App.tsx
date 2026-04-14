@@ -17,7 +17,7 @@ export type RootStackParamList = {
   OtpVerification: { phoneNumber: string, deliveryChannel: string };
   
   // Success screen shown after successful verification
-  VerificationSuccessScreen: { token: string; phone: string };
+  VerificationSuccessScreen: { token: string; idToken: string; phone: string };
   
   // Screen for Silent Network Authentication flow
   NetworkVerificationScreen: {
@@ -74,6 +74,7 @@ function App(): React.JSX.Element {
           name="VerificationSuccessScreen"
           component={VerificationCompleteScreen}
           options={{
+            gestureEnabled: false,
             cardStyleInterpolator: CardStyleInterpolators.forFadeFromRightAndroid,
           }}
         />

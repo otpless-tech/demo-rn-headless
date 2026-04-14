@@ -1,21 +1,18 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  Platform,
   SafeAreaView,
   Image,
-  Dimensions,
-  StatusBar
+  StatusBar,
 } from 'react-native';
-import { useRoute, RouteProp, useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
-
-const { width, height } = Dimensions.get('window');
+import { useOtplessResult } from '../hooks/useOtplessResult';
 
 // Define screen props with types for route parameters
 type NetworkVerificationScreenProps = {
@@ -34,7 +31,7 @@ type NetworkVerificationScreenProps = {
 
 /**
  * NetworkVerificationScreen
- * 
+ *
  * This screen is displayed during Silent Network Authentication (SNA) process.
  * It shows a loading state while OTPless attempts to verify the user's phone number
  * through the carrier network without requiring OTP input.
@@ -45,92 +42,28 @@ export default function NetworkVerificationScreen() {
 
   // Extract parameters from navigation
   const {
-    backgroundColor = '#4B007D',
-    textColor = '#FFFFFF',
-    progressColor = '#FF5C5C',
     message = 'Verifying over network...',
     phoneNumber = '',
-    otplessModule
+    otplessModule,
   } = route.params || {};
 
-  // Set up response callback when component mounts
-  useEffect(() => {
-    otplessModule.setResponseCallback(onHeadlessResult);
-  }, []);
+  const [error, setError] = React.useState('');
 
-  // Navigate to success screen with authentication token
-  const navigate = (token: string) => {
-    console.log("Navigating to screen with token:", token);
-    navigation.navigate('VerificationSuccessScreen', {
-      token,
-      phone: phoneNumber,
-    });
-  };
-
-  // Handle responses from OTPless SDK during Silent Authentication
-  const onHeadlessResult = (result: any) => {
-    otplessModule.commitResponse(result);
-    const responseType = result.responseType;
-
-    switch (responseType) {
-      case "SDK_READY":
-        // SDK is initialized and ready
-        console.log("SDK is ready");
-        break;
-      case "FAILED":
-        // SDK initialization failed
-        console.log("SDK initialization failed");
-        break;
-      case "INITIATE":
-        if (result.statusCode === 200) {
-          console.log("Headless authentication initiated");
-          const authType = result.response.authType;
-          if (authType === "OTP") {
-            // If Silent Auth failed and fallback to OTP is configured,
-            // navigate to OTP verification screen
-            navigation.replace("OtpVerification", {
-              phoneNumber: phoneNumber,
-              deliveryChannel: result.response.deliveryChannel,
-            });
-          } else if (authType === "SILENT_AUTH") {
-            // Continue showing SNA loading screen
-          }
-        }
-        break;
-      case "OTP_AUTO_READ":
-        // Auto-detect OTP (Android only)
-        if (Platform.OS === "android") {
-          const otp = result.response.otp;
-          console.log(`OTP Received: ${otp}`);
-        }
-        break;
-      case "VERIFY":
-        // Handle verification response
-        break;
-      case "DELIVERY_STATUS":
-        // OTP delivery status updates
-        const authType = result.response.authType;
-        const deliveryChannel = result.response.deliveryChannel;
-        break;
-      case "ONETAP":
-        // Handle successful authentication
-        const token = result.response.data.token;
-        if (token != null) {
-          console.log(`OneTap Data: ${token}`);
-          navigate(token);
-        }
-        break;
-      case "FALLBACK_TRIGGERED":
-        // Handle fallback to different authentication method
-        if (result.response.deliveryChannel != null) {
-          const newDeliveryChannel = result.response.deliveryChannel;
-        }
-        break;
-      default:
-        console.warn(`Unknown response type: ${responseType}`);
-        break;
-    }
-  };
+  useOtplessResult({
+    otplessModule,
+    phoneNumber,
+    setError,
+    onInitiateSuccess: (authType, response) => {
+      if (authType === 'OTP') {
+        navigation.replace('OtpVerification', {
+          phoneNumber,
+          deliveryChannel: response.deliveryChannel,
+        });
+      }
+      // SILENT_AUTH: stay on this screen, SNA in progress
+    },
+    onError: () => {}, // error already set via setError
+  });
 
   // UI for Silent Network Authentication loading screen
   return (
@@ -154,6 +87,11 @@ export default function NetworkVerificationScreen() {
               <ActivityIndicator size="small" color="#FF5E62" style={styles.deliveryLoader} />
               <Text style={styles.loaderText}>This may take a few seconds</Text>
             </View>
+
+            {/* Error message */}
+            {error.length > 0 && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
 
           </View>
         </SafeAreaView>
@@ -179,7 +117,7 @@ const styles = StyleSheet.create({
   iconTextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,   // spacing below
+    marginBottom: 12,
   },
   phoneIcon: {
     width: 45,
@@ -192,7 +130,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
-    marginBottom: 16,  // <-- add this
+    marginBottom: 16,
   },
   container: {
     flex: 1,
@@ -232,10 +170,9 @@ const styles = StyleSheet.create({
     width: 100,
   },
   container2: {
-    flexDirection: 'row',   // Ensures left to right layout
-    alignItems: 'center',   // Vertically centers items
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-
   signalWave1: {
     position: 'absolute',
     width: 90,
@@ -297,5 +234,11 @@ const styles = StyleSheet.create({
   footerText: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 12,
-  }
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#FF5C5C',
+    fontSize: 16,
+    marginTop: 16,
+  },
 });

@@ -14,6 +14,7 @@ import { useRoute, RouteProp, useNavigation, NavigationProp } from '@react-navig
 import { RootStackParamList } from '../App';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
+import { handleInitiateError, handleVerifyError } from '../utils/otplessErrorHandlers';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,6 +54,8 @@ export default function NetworkVerificationScreen() {
     otplessModule
   } = route.params || {};
 
+  const [error, setError] = React.useState('');
+
   // Set up response callback when component mounts
   useEffect(() => {
     otplessModule.setResponseCallback(onHeadlessResult);
@@ -86,15 +89,14 @@ export default function NetworkVerificationScreen() {
           console.log("Headless authentication initiated");
           const authType = result.response.authType;
           if (authType === "OTP") {
-            // If Silent Auth failed and fallback to OTP is configured,
-            // navigate to OTP verification screen
             navigation.replace("OtpVerification", {
               phoneNumber: phoneNumber,
               deliveryChannel: result.response.deliveryChannel,
             });
-          } else if (authType === "SILENT_AUTH") {
-            // Continue showing SNA loading screen
           }
+          // SILENT_AUTH: stay on this screen, SNA in progress
+        } else {
+          setError(handleInitiateError(result.response));
         }
         break;
       case "OTP_AUTO_READ":
@@ -105,7 +107,15 @@ export default function NetworkVerificationScreen() {
         }
         break;
       case "VERIFY":
-        // Handle verification response
+        if (result.response.authType == "SILENT_AUTH") {
+          if (result.statusCode == 9106) {
+            // SNA and all fallback methods exhausted — exit auth flow
+            setError('Verification failed. Please try again.');
+          }
+          // else: SmartAuth fallback will trigger a new INITIATE event
+        } else {
+          setError(handleVerifyError(result.response));
+        }
         break;
       case "DELIVERY_STATUS":
         // OTP delivery status updates
@@ -114,16 +124,16 @@ export default function NetworkVerificationScreen() {
         break;
       case "ONETAP":
         // Handle successful authentication
-        const token = result.response.data.token;
+        const token = result.response.token;
         if (token != null) {
           console.log(`OneTap Data: ${token}`);
           navigate(token);
         }
         break;
       case "FALLBACK_TRIGGERED":
-        // Handle fallback to different authentication method
         if (result.response.deliveryChannel != null) {
           const newDeliveryChannel = result.response.deliveryChannel;
+          console.log("Fallback triggered, new delivery channel:", newDeliveryChannel);
         }
         break;
       default:
@@ -154,6 +164,11 @@ export default function NetworkVerificationScreen() {
               <ActivityIndicator size="small" color="#FF5E62" style={styles.deliveryLoader} />
               <Text style={styles.loaderText}>This may take a few seconds</Text>
             </View>
+
+            {/* Error message */}
+            {error.length > 0 && (
+              <Text style={styles.errorText}>{error}</Text>
+            )}
 
           </View>
         </SafeAreaView>
@@ -297,5 +312,11 @@ const styles = StyleSheet.create({
   footerText: {
     color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 12,
-  }
+  },
+  errorText: {
+    textAlign: 'center',
+    color: '#FF5C5C',
+    fontSize: 16,
+    marginTop: 16,
+  },
 });

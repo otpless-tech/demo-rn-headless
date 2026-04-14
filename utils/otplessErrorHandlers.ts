@@ -88,29 +88,38 @@ export function handleVerifyError(response: any): string {
   }
 
   let uiMessage: string;
-
   switch (errorCode) {
-    case '7118':
-      uiMessage = 'Incorrect OTP. Please try again.';
-      break;
-    case '7119':
-      uiMessage = 'OTP has expired. Please request a new one.';
-      break;
-    case '7120':
-      uiMessage = 'Too many incorrect attempts. Please request a new OTP.';
-      break;
-    case '9100':
-    case '9101':
-    case '9102':
-    case '9103':
-    case '9104':
-    case '9105':
-    case '9110':
-      uiMessage = 'Network error. Please check your connection.';
-      break;
+    case "7112":
+        uiMessage = "Empty OTP. Please try again";
+        break;
+    case "7115":
+        uiMessage = "OTP is already verified. Please try again";
+        break;
+    case "7118":
+        uiMessage = 'Incorrect OTP. Please try again.';
+        break;
+    case "7303":
+    case '7114':
+        uiMessage = 'OTP expired. Please resend the OTP';
+        break;
+    case "4000":
+        uiMessage = `OTPless Error: ${errorMessage ?? "Unknown error"}`;
+        break;
+
+    // Internet-related errors
+    case "9100":
+    case "9101":
+    case "9102":
+    case "9103":
+    case "9104":
+    case "9105":
+    case "9110":
+        uiMessage = `OTPless Error: Network error (Connectivity issue) - ${errorMessage}`
+        break;
     default:
-      uiMessage = errorMessage ?? 'Verification failed. Please try again.';
+        uiMessage = `OTPless Error: ${errorMessage ?? "Unknown error"}`;
   }
+
 
   console.log(`OTPless Verify Error [${errorCode}]: ${errorMessage}`);
   return uiMessage;

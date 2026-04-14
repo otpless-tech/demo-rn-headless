@@ -43,6 +43,18 @@ const PhoneNumberScreen = () => {
     >;
     const navigation = useNavigation<PhoneNumberScreenNavigationProp>();
 
+    // Must run before useOtplessResult: initialize() creates the NativeEventEmitter
+    // instance inside headlessModule. setResponseCallback (called by the hook below)
+    // uses that emitter via optional chaining — if it is null the listener is silently
+    // dropped and no SDK events are ever received.
+    useEffect(() => {
+        headlessModule.initialize("0D9AIJ86AX0DTUAO9919");
+        return () => {
+            headlessModule.clearListener();
+            headlessModule.cleanup();
+        };
+    }, []);
+
     useOtplessResult({
         otplessModule: headlessModule,
         phoneNumber: phoneNumberRef.current,
@@ -67,15 +79,6 @@ const PhoneNumberScreen = () => {
         onResponse: () => setLoading(false),
         onError: () => setLoading(false),
     });
-
-    // Initialize OTPless SDK when component mounts
-    useEffect(() => {
-        headlessModule.initialize("0D9AIJ86AX0DTUAO9919");
-        return () => {
-            headlessModule.clearListener();
-            headlessModule.cleanup();
-        };
-    }, []);
 
     return (
         <View style={styles.container}>

@@ -49,7 +49,6 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
 
   const copyToClipboard = () => {
     Clipboard.setString(token);
-        Alert.alert('Copied', 'Token has been copied to clipboard');
     Alert.alert('Copied', 'Token has been copied to clipboard');
   };
 

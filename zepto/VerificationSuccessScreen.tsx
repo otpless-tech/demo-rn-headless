@@ -20,14 +20,15 @@ type VerificationCompleteScreenProps = {
   route: {
     params: {
       token: string;
-      phone: String;
+      idToken: string;
+      phone: string;
     };
   };
   navigation: any;
 };
 
 const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteScreenProps) => {
-  const { token, phone } = route.params;
+  const { token, idToken, phone } = route.params;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 

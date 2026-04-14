@@ -1,22 +1,18 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  Platform,
   SafeAreaView,
   Image,
-  Dimensions,
-  StatusBar
+  StatusBar,
 } from 'react-native';
-import { useRoute, RouteProp, useNavigation, NavigationProp } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
-import { handleInitiateError, handleVerifyError } from '../utils/otplessErrorHandlers';
-
-const { width, height } = Dimensions.get('window');
+import { useOtplessResult } from '../hooks/useOtplessResult';
 
 // Define screen props with types for route parameters
 type NetworkVerificationScreenProps = {
@@ -35,7 +31,7 @@ type NetworkVerificationScreenProps = {
 
 /**
  * NetworkVerificationScreen
- * 
+ *
  * This screen is displayed during Silent Network Authentication (SNA) process.
  * It shows a loading state while OTPless attempts to verify the user's phone number
  * through the carrier network without requiring OTP input.
@@ -46,101 +42,28 @@ export default function NetworkVerificationScreen() {
 
   // Extract parameters from navigation
   const {
-    backgroundColor = '#4B007D',
-    textColor = '#FFFFFF',
-    progressColor = '#FF5C5C',
     message = 'Verifying over network...',
     phoneNumber = '',
-    otplessModule
+    otplessModule,
   } = route.params || {};
 
   const [error, setError] = React.useState('');
 
-  // Set up response callback when component mounts
-  useEffect(() => {
-    otplessModule.setResponseCallback(onHeadlessResult);
-  }, []);
-
-  // Navigate to success screen with authentication token
-  const navigate = (token: string) => {
-    console.log("Navigating to screen with token:", token);
-    navigation.navigate('VerificationSuccessScreen', {
-      token,
-      phone: phoneNumber,
-    });
-  };
-
-  // Handle responses from OTPless SDK during Silent Authentication
-  const onHeadlessResult = (result: any) => {
-    otplessModule.commitResponse(result);
-    const responseType = result.responseType;
-
-    switch (responseType) {
-      case "SDK_READY":
-        // SDK is initialized and ready
-        console.log("SDK is ready");
-        break;
-      case "FAILED":
-        // SDK initialization failed
-        console.log("SDK initialization failed");
-        break;
-      case "INITIATE":
-        if (result.statusCode === 200) {
-          console.log("Headless authentication initiated");
-          const authType = result.response.authType;
-          if (authType === "OTP") {
-            navigation.replace("OtpVerification", {
-              phoneNumber: phoneNumber,
-              deliveryChannel: result.response.deliveryChannel,
-            });
-          }
-          // SILENT_AUTH: stay on this screen, SNA in progress
-        } else {
-          setError(handleInitiateError(result.response));
-        }
-        break;
-      case "OTP_AUTO_READ":
-        // Auto-detect OTP (Android only)
-        if (Platform.OS === "android") {
-          const otp = result.response.otp;
-          console.log(`OTP Received: ${otp}`);
-        }
-        break;
-      case "VERIFY":
-        if (result.response.authType == "SILENT_AUTH") {
-          if (result.statusCode == 9106) {
-            // SNA and all fallback methods exhausted — exit auth flow
-            setError('Verification failed. Please try again.');
-          }
-          // else: SmartAuth fallback will trigger a new INITIATE event
-        } else {
-          setError(handleVerifyError(result.response));
-        }
-        break;
-      case "DELIVERY_STATUS":
-        // OTP delivery status updates
-        const authType = result.response.authType;
-        const deliveryChannel = result.response.deliveryChannel;
-        break;
-      case "ONETAP":
-        // Handle successful authentication
-        const token = result.response.token;
-        if (token != null) {
-          console.log(`OneTap Data: ${token}`);
-          navigate(token);
-        }
-        break;
-      case "FALLBACK_TRIGGERED":
-        if (result.response.deliveryChannel != null) {
-          const newDeliveryChannel = result.response.deliveryChannel;
-          console.log("Fallback triggered, new delivery channel:", newDeliveryChannel);
-        }
-        break;
-      default:
-        console.warn(`Unknown response type: ${responseType}`);
-        break;
-    }
-  };
+  useOtplessResult({
+    otplessModule,
+    phoneNumber,
+    setError,
+    onInitiateSuccess: (authType, response) => {
+      if (authType === 'OTP') {
+        navigation.replace('OtpVerification', {
+          phoneNumber,
+          deliveryChannel: response.deliveryChannel,
+        });
+      }
+      // SILENT_AUTH: stay on this screen, SNA in progress
+    },
+    onError: () => {}, // error already set via setError
+  });
 
   // UI for Silent Network Authentication loading screen
   return (
@@ -194,7 +117,7 @@ const styles = StyleSheet.create({
   iconTextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,   // spacing below
+    marginBottom: 12,
   },
   phoneIcon: {
     width: 45,
@@ -207,7 +130,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
-    marginBottom: 16,  // <-- add this
+    marginBottom: 16,
   },
   container: {
     flex: 1,
@@ -247,10 +170,9 @@ const styles = StyleSheet.create({
     width: 100,
   },
   container2: {
-    flexDirection: 'row',   // Ensures left to right layout
-    alignItems: 'center',   // Vertically centers items
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-
   signalWave1: {
     position: 'absolute',
     width: 90,

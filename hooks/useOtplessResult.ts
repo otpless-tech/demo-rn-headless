@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
-import { handleInitiateError, handleVerifyError } from '../utils/otplessErrorHandlers';
+import { handleInitiateError, handleVerifyError, isOtplessTerminalError } from '../utils/otplessErrorHandlers';
 
 export interface UseOtplessResultOptions {
   otplessModule: any;
@@ -70,8 +70,12 @@ export function useOtplessResult(options: UseOtplessResultOptions): void {
             console.log('Headless authentication initiated');
             onInitiateSuccess(result.response.authType, result.response);
           } else {
+            const errorCode = result.response?.errorCode as string;
             setError(handleInitiateError(result.response));
             onError?.();
+            if (isOtplessTerminalError(errorCode)) {
+              console.log("Fallback to you exiting login flow...");
+            }
           }
           break;
 
@@ -89,6 +93,7 @@ export function useOtplessResult(options: UseOtplessResultOptions): void {
               // SNA and all fallback methods exhausted — exit auth flow
               setError('Verification failed. Please try again.');
               onError?.();
+              console.log("Fallback to you exiting login flow...");
             }
             // else: SmartAuth fallback will trigger a new INITIATE event
           } else {
@@ -103,9 +108,10 @@ export function useOtplessResult(options: UseOtplessResultOptions): void {
 
         case 'ONETAP': {
           const token = result.response.data.token;
+          console.log(`OneTap token: ${token}`);
           const idToken = result.response.data.idToken;
+          console.log(`OneTap idToken: ${idToken}`);
           if (token != null) {
-            console.log(`OneTap token: ${token}`);
             navigation.reset({
               index: 0,
               routes: [

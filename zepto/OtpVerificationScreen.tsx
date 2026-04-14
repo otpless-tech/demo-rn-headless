@@ -86,10 +86,6 @@ const OtpVerificationScreen = ({ route }: OtpVerificationScreenNavigationProp) =
               value={otp}
               onChangeText={(text: string) => {
                 setOtp(text);
-                if (text.length === 6) {
-                  setLoading(true);
-                  triggerOtpVerification(text);
-                }
               }}
               onComplete={undefined}
             />

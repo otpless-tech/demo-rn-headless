@@ -26,7 +26,7 @@ type VerificationCompleteScreenProps = {
 };
 
 const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteScreenProps) => {
-  const { token, phone } = route.params;
+  const { token, idToken, phone } = route.params;
   const scaleAnim = React.useRef(new Animated.Value(0)).current;
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const lastBackPress = useRef<number>(0);
@@ -64,8 +64,8 @@ const VerificationCompleteScreen = ({ route, navigation }: VerificationCompleteS
   }, []);
 
   const copyToClipboard = () => {
-    Clipboard.setString(token);
-    Alert.alert('Copied', 'Token has been copied to clipboard');
+    Clipboard.setString(idToken);
+    Alert.alert('Copied', 'idToken has been copied to clipboard');
   };
 
   return (

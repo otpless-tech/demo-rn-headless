@@ -124,3 +124,12 @@ export function handleVerifyError(response: any): string {
   console.log(`OTPless Verify Error [${errorCode}]: ${errorMessage}`);
   return uiMessage;
 }
+
+const otplessNonTerminalErrorCode: string[] = ["7101", "7102", "7103", "7113", "7116", "7121", "7020", "7022", "7023", "7024", "7112", "7115", "7118", "7301", "7114"];
+
+export function isOtplessTerminalError(errorCode?: string): boolean {
+  if (!errorCode || errorCode === "undefined") {
+    return false;
+  }
+  return !otplessNonTerminalErrorCode.includes(errorCode);
+}

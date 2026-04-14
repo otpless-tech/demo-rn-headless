@@ -74,6 +74,7 @@ function App(): React.JSX.Element {
           name="VerificationSuccessScreen"
           component={VerificationCompleteScreen}
           options={{
+            gestureEnabled: false,
             cardStyleInterpolator: CardStyleInterpolators.forFadeFromRightAndroid,
           }}
         />

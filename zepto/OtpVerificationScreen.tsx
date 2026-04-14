@@ -11,6 +11,7 @@ import {
 
 import { headlessModule } from './PhoneNumberScreen';
 import OTPInput from './OTPInput';
+import { handleVerifyError } from '../utils/otplessErrorHandlers';
 
 type OtpVerificationScreenNavigationProp = {
     route: {
@@ -68,7 +69,7 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
                 break;
             }
             case "VERIFY": {
-                setError(result.response.errorMessage);
+                setError(handleVerifyError(result.response));
                 break;
             }
             case "DELIVERY_STATUS": {
@@ -80,7 +81,7 @@ const OtpVerificationScreen = ({ route, navigation }: OtpVerificationScreenNavig
 
             case "ONETAP": {
                 console.log("OneTap response received");
-                const token = result.response.data.token;
+                const token = result.response.token;
                 if (token != null) {
                     console.log(`OneTap Data: ${token}`);
                     console.log("Navigating to screen with token:", token);

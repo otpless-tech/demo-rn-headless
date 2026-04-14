@@ -106,10 +106,14 @@ export function useOtplessResult(options: UseOtplessResultOptions): void {
           const idToken = result.response.data.idToken;
           if (token != null) {
             console.log(`OneTap token: ${token}`);
-            navigation.navigate('VerificationSuccessScreen', {
-              token,
-              idToken: idToken ?? '',
-              phone: phoneRef.current,
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'VerificationSuccessScreen',
+                  params: { token, idToken: idToken ?? '', phone: phoneRef.current },
+                },
+              ],
             });
           }
           break;

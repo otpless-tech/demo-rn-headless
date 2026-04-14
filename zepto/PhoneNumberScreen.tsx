@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 
 // Import OTPless Headless SDK
 import { OtplessHeadlessModule } from 'otpless-headless-rn';
+import { handleInitiateError, handleVerifyError } from '../utils/otplessErrorHandlers';
 
 // Create a global instance of OTPless Headless module that can be shared across screens
 export const headlessModule = new OtplessHeadlessModule();
@@ -100,8 +101,7 @@ const PhoneNumberScreen = () => {
                         });
                     }
                 } else {
-                    // Handle initiation error
-                    setError(result.response.errorMessage);
+                    setError(handleInitiateError(result.response));
                 }
                 break;
             }
@@ -114,16 +114,14 @@ const PhoneNumberScreen = () => {
                 break;
             }
             case "VERIFY": {
-                // Handle verification response
                 if (result.response.authType == "SILENT_AUTH") {
                     if (result.statusCode == 9106) {
-                        // SNA and all fallback methods failed
-                        // Handle Terminal Senario by fallback to legacy auth
-                    } else {
-                        // SNA failed, but fallback methods might be available
+                        // SNA and all fallback methods exhausted — exit auth flow
+                        setError('Verification failed. Please try again.');
                     }
+                    // else: SNA failed but SmartAuth fallback will trigger INITIATE with next method
                 } else {
-                    // Handle other verification scenarios
+                    setError(handleVerifyError(result.response));
                 }
                 break;
             }
@@ -139,7 +137,7 @@ const PhoneNumberScreen = () => {
             case "ONETAP": {
                 // OneTap authentication success
                 console.log("OneTap response received");
-                const token = result.response.data.token;
+                const token = result.response.token;
                 if (token != null) {
                     // Navigate to success screen with token
                     navigation.navigate('VerificationSuccessScreen', {
